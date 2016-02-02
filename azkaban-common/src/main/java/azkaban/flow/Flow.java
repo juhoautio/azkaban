@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import azkaban.executor.ExecutionOptions;
 import azkaban.executor.mail.DefaultMailCreator;
 
 public class Flow {
@@ -50,6 +51,7 @@ public class Flow {
   private Map<String, Object> metadata = new HashMap<String, Object>();
 
   private boolean isLayedOut = false;
+  private ExecutionOptions.FailureAction failureAction;
 
   public Flow(String id) {
     this.id = id;
@@ -240,6 +242,9 @@ public class Flow {
     flowObj.put("edges", objectizeEdges());
     flowObj.put("failure.email", failureEmail);
     flowObj.put("success.email", successEmail);
+    if (failureAction != null) {
+      flowObj.put("failureAction", failureAction.toString());
+    }
     flowObj.put("mailCreator", mailCreator);
     flowObj.put("layedout", isLayedOut);
     if (errors != null) {
@@ -324,6 +329,9 @@ public class Flow {
 
     flow.failureEmail = (List<String>) flowObject.get("failure.email");
     flow.successEmail = (List<String>) flowObject.get("success.email");
+    if (flowObject.containsKey("failureAction")) {
+      flow.failureAction = ExecutionOptions.FailureAction.valueOf((String) flowObject.get("failureAction"));
+    }
     if (flowObject.containsKey("mailCreator")) {
       flow.mailCreator = flowObject.get("mailCreator").toString();
     }
@@ -410,5 +418,9 @@ public class Flow {
 
   public void setProjectId(int projectId) {
     this.projectId = projectId;
+  }
+
+  public ExecutionOptions.FailureAction getFailureAction() {
+    return failureAction;
   }
 }

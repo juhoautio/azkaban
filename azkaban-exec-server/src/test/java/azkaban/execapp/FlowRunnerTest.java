@@ -16,6 +16,7 @@
 
 package azkaban.execapp;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -23,15 +24,16 @@ import static org.mockito.Mockito.when;
 import azkaban.execapp.jmx.JmxJobMBeanManager;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import azkaban.test.Utils;
+import java.util.List;
 import org.apache.commons.io.FileUtils;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import azkaban.event.Event;
@@ -51,9 +53,13 @@ import azkaban.project.ProjectLoader;
 import azkaban.project.MockProjectLoader;
 import azkaban.utils.JSONUtils;
 import azkaban.utils.Props;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+// enable @RunWith(Parameterized.class) to run this 1000 times in a row
+// @RunWith(Parameterized.class)
 public class FlowRunnerTest {
   private File workingDir;
   private JobTypeManager jobtypeManager;
@@ -61,6 +67,11 @@ public class FlowRunnerTest {
   @Mock private ExecutorLoader loader;
 
   private static final File TEST_DIR = new File("../azkaban-test/src/test/resources/azkaban/test/executions/exectest1");
+
+  @Parameterized.Parameters
+  public static List<Object[]> data() {
+    return Arrays.asList(new Object[1000][0]);
+  }
 
   public FlowRunnerTest() {
 
@@ -234,14 +245,13 @@ public class FlowRunnerTest {
 
     FlowRunner runner = createFlowRunner(flow, loader, eventCollector);
 
-    runner.run();
+    startThread(runner);
     ExecutableFlow exFlow = runner.getExecutableFlow();
+    waitFlowFinished(runner);
 
     Assert.assertTrue(runner.isKilled());
 
-    Assert.assertTrue(
-        "Expected flow " + Status.KILLED + " instead " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.KILLED);
+    assertEquals(Status.KILLED, exFlow.getStatus());
 
     testStatus(exFlow, "job1", Status.SUCCEEDED);
     testStatus(exFlow, "job2d", Status.FAILED);
@@ -312,14 +322,21 @@ public class FlowRunnerTest {
     FlowRunner runner = createFlowRunner(loader, eventCollector, "exec1");
 
     startThread(runner);
+    // TODO this doesn't yet guarantee that InteractiveTestJob.getTestJob("job6") doesn't return null
     waitJobsStarted(runner, new String[] {"job1", "job2", "job3", "job4", "job6"});
+    ExecutableFlow exFlow = runner.getExecutableFlow();
+
+    InteractiveTestJob.getTestJob("job6").delayFinish();
 
     runner.kill("me");
     Assert.assertTrue(runner.isKilled());
 
+    testStatus(exFlow, "job6", Status.KILLING);
+    assertEquals(Status.KILLING, exFlow.getStatus());
+    InteractiveTestJob.getTestJob("job6").finishDelayed();
+
     waitFlowFinished(runner);
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
     testStatus(exFlow, "job1", Status.SUCCEEDED);
     testStatus(exFlow, "job2", Status.SUCCEEDED);
     testStatus(exFlow, "job5", Status.CANCELLED);
@@ -330,9 +347,7 @@ public class FlowRunnerTest {
     testStatus(exFlow, "job4", Status.KILLED);
     testStatus(exFlow, "job6", Status.KILLED);
 
-    Assert.assertTrue(
-        "Expected FAILED status instead got " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.KILLED);
+    assertEquals(Status.KILLED, exFlow.getStatus());
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,

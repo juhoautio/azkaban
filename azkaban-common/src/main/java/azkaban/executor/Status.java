@@ -29,7 +29,8 @@ public enum Status {
   DISABLED(100),
   QUEUED(110),
   FAILED_SUCCEEDED(120),
-  CANCELLED(130);
+  CANCELLED(130),
+  KILLING(140);
 
   private final int numVal;
 

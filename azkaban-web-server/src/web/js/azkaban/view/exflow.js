@@ -180,9 +180,9 @@ azkaban.FlowTabView = Backbone.View.extend({
 		if (data.status == "SUCCEEDED") {
                         $("#executebtn").show();
 		}
-                else if (data.status == "PREPARING") {
-                        $("#cancelbtn").show();
-                }
+		else if (data.status == "PREPARING") {
+						$("#cancelbtn").show();
+		}
 		else if (data.status == "FAILED") {
 			$("#executebtn").show();
 		}
@@ -205,6 +205,8 @@ azkaban.FlowTabView = Backbone.View.extend({
 		else if (data.status == "KILLED") {
 			$("#executebtn").show();
 		}
+    else if (data.status == "KILLING") {
+    }
 	},
 
 	handleCancelClick: function(evt) {
@@ -447,6 +449,10 @@ var updaterFunction = function() {
 			// 2 min updates
 			setTimeout(function() {updaterFunction();}, 2*60*1000);
 		}
+    else if (data.status == "KILLING") {
+      // 20 s updates
+      setTimeout(function() {updaterFunction();}, 30*1000);
+    }
 		else if (data.status != "SUCCEEDED" && data.status != "FAILED") {
 			// 2 min updates
 			setTimeout(function() {updaterFunction();}, 2*60*1000);

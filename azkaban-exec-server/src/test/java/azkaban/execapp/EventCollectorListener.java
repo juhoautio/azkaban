@@ -18,14 +18,21 @@ package azkaban.execapp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 import azkaban.event.EventListener;
 import azkaban.event.Event;
 import azkaban.event.Event.Type;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventCollectorListener implements EventListener {
-  private ArrayList<Event> eventList = new ArrayList<Event>();
+
+  public static final Object handleEvent = new Object();
+
+  // CopyOnWriteArrayList allows concurrent iteration and modification
+  private List<Event> eventList = new CopyOnWriteArrayList<>();
   private HashSet<Event.Type> filterOutTypes = new HashSet<Event.Type>();
 
   public void setEventFilterOut(Event.Type... types) {
@@ -34,12 +41,15 @@ public class EventCollectorListener implements EventListener {
 
   @Override
   public void handleEvent(Event event) {
+    synchronized (handleEvent) {
+      handleEvent.notifyAll();
+    }
     if (!filterOutTypes.contains(event.getType())) {
       eventList.add(event);
     }
   }
 
-  public ArrayList<Event> getEventList() {
+  public List<Event> getEventList() {
     return eventList;
   }
 

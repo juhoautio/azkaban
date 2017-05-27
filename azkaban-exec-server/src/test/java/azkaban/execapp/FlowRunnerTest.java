@@ -31,7 +31,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import azkaban.event.Event;
@@ -54,17 +53,13 @@ import azkaban.utils.Props;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class FlowRunnerTest {
+public class FlowRunnerTest extends FlowRunnerTestBase {
   private File workingDir;
   private JobTypeManager jobtypeManager;
   private ProjectLoader fakeProjectLoader;
   @Mock private ExecutorLoader loader;
 
   private static final File TEST_DIR = new File("../azkaban-test/src/test/resources/azkaban/test/executions/exectest1");
-
-  public FlowRunnerTest() {
-
-  }
 
   @Before
   public void setUp() throws Exception {
@@ -108,25 +103,24 @@ public class FlowRunnerTest {
     EventCollectorListener eventCollector = new EventCollectorListener();
     eventCollector.setEventFilterOut(Event.Type.JOB_FINISHED,
         Event.Type.JOB_STARTED, Event.Type.JOB_STATUS_CHANGED);
-    FlowRunner runner = createFlowRunner(loader, eventCollector, "exec1");
+    runner = createFlowRunner(loader, eventCollector, "exec1");
 
     startThread(runner);
-    succeedJobs(runner, "job3", "job4", "job6");
-    waitFlowFinished(runner);
+    succeedJobs("job3", "job4", "job6");
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
-    Assert.assertTrue(exFlow.getStatus() == Status.SUCCEEDED);
+    assertFlowStatus(Status.SUCCEEDED);
+    assertThreadShutDown();
     compareFinishedRuntime(runner);
 
-    testStatus(exFlow, "job1", Status.SUCCEEDED);
-    testStatus(exFlow, "job2", Status.SUCCEEDED);
-    testStatus(exFlow, "job3", Status.SUCCEEDED);
-    testStatus(exFlow, "job4", Status.SUCCEEDED);
-    testStatus(exFlow, "job5", Status.SUCCEEDED);
-    testStatus(exFlow, "job6", Status.SUCCEEDED);
-    testStatus(exFlow, "job7", Status.SUCCEEDED);
-    testStatus(exFlow, "job8", Status.SUCCEEDED);
-    testStatus(exFlow, "job10", Status.SUCCEEDED);
+    assertStatus("job1", Status.SUCCEEDED);
+    assertStatus("job2", Status.SUCCEEDED);
+    assertStatus("job3", Status.SUCCEEDED);
+    assertStatus("job4", Status.SUCCEEDED);
+    assertStatus("job5", Status.SUCCEEDED);
+    assertStatus("job6", Status.SUCCEEDED);
+    assertStatus("job7", Status.SUCCEEDED);
+    assertStatus("job8", Status.SUCCEEDED);
+    assertStatus("job10", Status.SUCCEEDED);
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -151,29 +145,28 @@ public class FlowRunnerTest {
     exFlow.getExecutableNode("job5").setStatus(Status.DISABLED);
     exFlow.getExecutableNode("job10").setStatus(Status.DISABLED);
 
-    FlowRunner runner = createFlowRunner(exFlow, loader, eventCollector);
+    runner = createFlowRunner(exFlow, loader, eventCollector);
 
     Assert.assertTrue(!runner.isKilled());
-    Assert.assertTrue(exFlow.getStatus() == Status.READY);
+    assertFlowStatus(Status.READY);
 
     startThread(runner);
-    succeedJobs(runner, "job3", "job4");
-    waitFlowFinished(runner);
+    succeedJobs("job3", "job4");
 
-    exFlow = runner.getExecutableFlow();
+    assertThreadShutDown();
     compareFinishedRuntime(runner);
 
-    Assert.assertTrue(exFlow.getStatus() == Status.SUCCEEDED);
+    assertFlowStatus(Status.SUCCEEDED);
 
-    testStatus(exFlow, "job1", Status.SKIPPED);
-    testStatus(exFlow, "job2", Status.SUCCEEDED);
-    testStatus(exFlow, "job3", Status.SUCCEEDED);
-    testStatus(exFlow, "job4", Status.SUCCEEDED);
-    testStatus(exFlow, "job5", Status.SKIPPED);
-    testStatus(exFlow, "job6", Status.SKIPPED);
-    testStatus(exFlow, "job7", Status.SUCCEEDED);
-    testStatus(exFlow, "job8", Status.SUCCEEDED);
-    testStatus(exFlow, "job10", Status.SKIPPED);
+    assertStatus("job1", Status.SKIPPED);
+    assertStatus("job2", Status.SUCCEEDED);
+    assertStatus("job3", Status.SUCCEEDED);
+    assertStatus("job4", Status.SUCCEEDED);
+    assertStatus("job5", Status.SKIPPED);
+    assertStatus("job6", Status.SKIPPED);
+    assertStatus("job7", Status.SUCCEEDED);
+    assertStatus("job8", Status.SUCCEEDED);
+    assertStatus("job10", Status.SKIPPED);
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -192,27 +185,25 @@ public class FlowRunnerTest {
         Event.Type.JOB_STARTED, Event.Type.JOB_STATUS_CHANGED);
     ExecutableFlow flow = prepareExecDir(TEST_DIR, "exec2", 1);
 
-    FlowRunner runner = createFlowRunner(flow, loader, eventCollector);
+    runner = createFlowRunner(flow, loader, eventCollector);
 
     startThread(runner);
-    succeedJobs(runner, "job6");
-    waitFlowFinished(runner);
+    succeedJobs("job6");
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
     Assert.assertTrue(!runner.isKilled());
-    Assert.assertTrue("Flow status " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.FAILED);
+    assertFlowStatus(Status.FAILED);
 
-    testStatus(exFlow, "job1", Status.SUCCEEDED);
-    testStatus(exFlow, "job2d", Status.FAILED);
-    testStatus(exFlow, "job3", Status.CANCELLED);
-    testStatus(exFlow, "job4", Status.CANCELLED);
-    testStatus(exFlow, "job5", Status.CANCELLED);
-    testStatus(exFlow, "job6", Status.SUCCEEDED);
-    testStatus(exFlow, "job7", Status.CANCELLED);
-    testStatus(exFlow, "job8", Status.CANCELLED);
-    testStatus(exFlow, "job9", Status.CANCELLED);
-    testStatus(exFlow, "job10", Status.CANCELLED);
+    assertStatus("job1", Status.SUCCEEDED);
+    assertStatus("job2d", Status.FAILED);
+    assertStatus("job3", Status.CANCELLED);
+    assertStatus("job4", Status.CANCELLED);
+    assertStatus("job5", Status.CANCELLED);
+    assertStatus("job6", Status.SUCCEEDED);
+    assertStatus("job7", Status.CANCELLED);
+    assertStatus("job8", Status.CANCELLED);
+    assertStatus("job9", Status.CANCELLED);
+    assertStatus("job10", Status.CANCELLED);
+    assertThreadShutDown();
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -232,27 +223,24 @@ public class FlowRunnerTest {
     ExecutableFlow flow = prepareExecDir(TEST_DIR, "exec2", 1);
     flow.getExecutionOptions().setFailureAction(FailureAction.CANCEL_ALL);
 
-    FlowRunner runner = createFlowRunner(flow, loader, eventCollector);
+    runner = createFlowRunner(flow, loader, eventCollector);
 
     runner.run();
-    ExecutableFlow exFlow = runner.getExecutableFlow();
 
     Assert.assertTrue(runner.isKilled());
 
-    Assert.assertTrue(
-        "Expected flow " + Status.KILLED + " instead " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.KILLED);
+    assertFlowStatus(Status.KILLED);
 
-    testStatus(exFlow, "job1", Status.SUCCEEDED);
-    testStatus(exFlow, "job2d", Status.FAILED);
-    testStatus(exFlow, "job3", Status.CANCELLED);
-    testStatus(exFlow, "job4", Status.CANCELLED);
-    testStatus(exFlow, "job5", Status.CANCELLED);
-    testStatus(exFlow, "job6", Status.KILLED);
-    testStatus(exFlow, "job7", Status.CANCELLED);
-    testStatus(exFlow, "job8", Status.CANCELLED);
-    testStatus(exFlow, "job9", Status.CANCELLED);
-    testStatus(exFlow, "job10", Status.CANCELLED);
+    assertStatus("job1", Status.SUCCEEDED);
+    assertStatus("job2d", Status.FAILED);
+    assertStatus("job3", Status.CANCELLED);
+    assertStatus("job4", Status.CANCELLED);
+    assertStatus("job5", Status.CANCELLED);
+    assertStatus("job6", Status.KILLED);
+    assertStatus("job7", Status.CANCELLED);
+    assertStatus("job8", Status.CANCELLED);
+    assertStatus("job9", Status.CANCELLED);
+    assertStatus("job10", Status.CANCELLED);
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -272,27 +260,24 @@ public class FlowRunnerTest {
     ExecutableFlow flow = prepareExecDir(TEST_DIR, "exec3", 1);
     flow.getExecutionOptions().setFailureAction(
         FailureAction.FINISH_ALL_POSSIBLE);
-    FlowRunner runner = createFlowRunner(flow, loader, eventCollector);
+    runner = createFlowRunner(flow, loader, eventCollector);
 
     startThread(runner);
-    succeedJobs(runner, "job3");
-    waitFlowFinished(runner);
+    succeedJobs("job3");
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
-    Assert.assertTrue(
-        "Expected flow " + Status.FAILED + " instead " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.FAILED);
+    assertFlowStatus(Status.FAILED);
 
-    testStatus(exFlow, "job1", Status.SUCCEEDED);
-    testStatus(exFlow, "job2d", Status.FAILED);
-    testStatus(exFlow, "job3", Status.SUCCEEDED);
-    testStatus(exFlow, "job4", Status.CANCELLED);
-    testStatus(exFlow, "job5", Status.CANCELLED);
-    testStatus(exFlow, "job6", Status.CANCELLED);
-    testStatus(exFlow, "job7", Status.SUCCEEDED);
-    testStatus(exFlow, "job8", Status.SUCCEEDED);
-    testStatus(exFlow, "job9", Status.SUCCEEDED);
-    testStatus(exFlow, "job10", Status.CANCELLED);
+    assertStatus("job1", Status.SUCCEEDED);
+    assertStatus("job2d", Status.FAILED);
+    assertStatus("job3", Status.SUCCEEDED);
+    assertStatus("job4", Status.CANCELLED);
+    assertStatus("job5", Status.CANCELLED);
+    assertStatus("job6", Status.CANCELLED);
+    assertStatus("job7", Status.SUCCEEDED);
+    assertStatus("job8", Status.SUCCEEDED);
+    assertStatus("job9", Status.SUCCEEDED);
+    assertStatus("job10", Status.CANCELLED);
+    assertThreadShutDown();
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -309,30 +294,27 @@ public class FlowRunnerTest {
     EventCollectorListener eventCollector = new EventCollectorListener();
     eventCollector.setEventFilterOut(Event.Type.JOB_FINISHED,
         Event.Type.JOB_STARTED, Event.Type.JOB_STATUS_CHANGED);
-    FlowRunner runner = createFlowRunner(loader, eventCollector, "exec1");
+    runner = createFlowRunner(loader, eventCollector, "exec1");
 
     startThread(runner);
-    waitJobsStarted(runner, new String[] {"job1", "job2", "job3", "job4", "job6"});
+
+    assertStatus("job1", Status.SUCCEEDED);
+    assertStatus("job2", Status.SUCCEEDED);
+    waitJobsStarted(runner, "job3", "job4", "job6");
 
     runner.kill("me");
     Assert.assertTrue(runner.isKilled());
 
-    waitFlowFinished(runner);
+    assertStatus("job5", Status.CANCELLED);
+    assertStatus("job7", Status.CANCELLED);
+    assertStatus("job8", Status.CANCELLED);
+    assertStatus("job10", Status.CANCELLED);
+    assertStatus("job3", Status.KILLED);
+    assertStatus("job4", Status.KILLED);
+    assertStatus("job6", Status.KILLED);
+    assertThreadShutDown();
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
-    testStatus(exFlow, "job1", Status.SUCCEEDED);
-    testStatus(exFlow, "job2", Status.SUCCEEDED);
-    testStatus(exFlow, "job5", Status.CANCELLED);
-    testStatus(exFlow, "job7", Status.CANCELLED);
-    testStatus(exFlow, "job8", Status.CANCELLED);
-    testStatus(exFlow, "job10", Status.CANCELLED);
-    testStatus(exFlow, "job3", Status.KILLED);
-    testStatus(exFlow, "job4", Status.KILLED);
-    testStatus(exFlow, "job6", Status.KILLED);
-
-    Assert.assertTrue(
-        "Expected FAILED status instead got " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.KILLED);
+    assertFlowStatus(Status.KILLED);
 
     try {
       eventCollector.checkEventExists(new Type[] { Type.FLOW_STARTED,
@@ -349,21 +331,18 @@ public class FlowRunnerTest {
     EventCollectorListener eventCollector = new EventCollectorListener();
     eventCollector.setEventFilterOut(Event.Type.JOB_FINISHED,
         Event.Type.JOB_STARTED, Event.Type.JOB_STATUS_CHANGED);
-    FlowRunner runner = createFlowRunner(loader, eventCollector, "exec4-retry");
+    runner = createFlowRunner(loader, eventCollector, "exec4-retry");
 
     runner.run();
 
-    ExecutableFlow exFlow = runner.getExecutableFlow();
-    testStatus(exFlow, "job-retry", Status.SUCCEEDED);
-    testStatus(exFlow, "job-pass", Status.SUCCEEDED);
-    testStatus(exFlow, "job-retry-fail", Status.FAILED);
-    testAttempts(exFlow, "job-retry", 3);
-    testAttempts(exFlow, "job-pass", 0);
-    testAttempts(exFlow, "job-retry-fail", 2);
+    assertStatus("job-retry", Status.SUCCEEDED);
+    assertStatus("job-pass", Status.SUCCEEDED);
+    assertStatus("job-retry-fail", Status.FAILED);
+    assertAttempts("job-retry", 3);
+    assertAttempts("job-pass", 0);
+    assertAttempts("job-retry-fail", 2);
 
-    Assert.assertTrue(
-        "Expected FAILED status instead got " + exFlow.getStatus(),
-        exFlow.getStatus() == Status.FAILED);
+    assertFlowStatus(Status.FAILED);
   }
 
   private void startThread(FlowRunner runner) {
@@ -372,82 +351,14 @@ public class FlowRunnerTest {
     thread.start();
   }
 
-  private void succeedJobs(FlowRunner runner, String... jobs) {
-    waitJobsStarted(runner, jobs);
-    for (String name : jobs) {
-      InteractiveTestJob job;
-      for (int i = 0; i < 100; i++) {
-        synchronized (InteractiveTestJob.testJobs) {
-          job = InteractiveTestJob.getTestJob(name);
-          if (job != null) {
-            job.succeedJob();
-            break;
-          }
-          try {
-            InteractiveTestJob.testJobs.wait(50L);
-          } catch (InterruptedException e) {
-          }
-        }
-      }
-    }
-  }
-
-  private void testStatus(ExecutableFlow flow, String name, Status status) {
-    ExecutableNode node = flow.getExecutableNode(name);
-
-    if (node.getStatus() != status) {
-      Assert.fail("Status of job " + node.getId() + " is " + node.getStatus()
-          + " not " + status + " as expected.");
-    }
-  }
-
-  private void testAttempts(ExecutableFlow flow, String name, int attempt) {
-    ExecutableNode node = flow.getExecutableNode(name);
-
+  private void assertAttempts(String name, int attempt) {
+    ExecutableNode node = runner.getExecutableFlow().getExecutableNode(name);
     if (node.getAttempt() != attempt) {
       Assert.fail("Expected " + attempt + " got " + node.getAttempt()
           + " attempts " + name);
     }
   }
-
-  private void waitFlowFinished(FlowRunner runner) {
-    for (int i = 0; i < 500; i++) {
-      if (runner.getExecutableFlow().isFlowFinished() && !runner.isRunnerThreadAlive()) {
-        return;
-      }
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-      }
-    }
-    Assert.fail("Flow didn't finish in 5 seconds");
-  }
-
-  private void waitJobsStarted(FlowRunner runner, String[] jobs) {
-    for (int i = 0; i < 500; i++) {
-      if (checkJobsStarted(runner, jobs)) {
-        return;
-      }
-      try {
-        // use some kind of wait instead?
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-      }
-    }
-    Assert.fail("Jobs didn't start in 5 seconds");
-  }
-
-  private boolean checkJobsStarted(FlowRunner runner, String[] jobs) {
-    ExecutableFlow exFlow = runner.getExecutableFlow();
-    for (String name : jobs) {
-      ExecutableNode node = exFlow.getExecutableNode(name);
-      if (!Status.isStatusFinished(node.getStatus()) && !Status.isStatusRunning(node.getStatus())) {
-        return false;
-      }
-    }
-    return true;
-  }
-
+  
   private ExecutableFlow prepareExecDir(File execDir, String flowName,
       int execId) throws IOException {
     synchronized (this) {

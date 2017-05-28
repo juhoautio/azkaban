@@ -34,7 +34,18 @@ public class InteractiveTestJob extends AbstractProcessJob {
   private boolean succeed = true;
 
   public static InteractiveTestJob getTestJob(String name) {
-    return testJobs.get(name);
+    for (int i = 0; i < 100; i++) {
+      if (testJobs.containsKey(name)) {
+        return testJobs.get(name);
+      }
+      synchronized (testJobs) {
+        try {
+          InteractiveTestJob.testJobs.wait(10L);
+        } catch (InterruptedException e) {
+        }
+      }
+    }
+    throw new IllegalStateException(name + " wasn't added in testJobs map");
   }
 
   public static void clearTestJobs() {
@@ -56,7 +67,7 @@ public class InteractiveTestJob extends AbstractProcessJob {
       id = groupName + ":" + id;
     }
     testJobs.put(id, this);
-    synchronized (InteractiveTestJob.testJobs) {
+    synchronized (testJobs) {
       testJobs.notifyAll();
     }
 

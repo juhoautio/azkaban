@@ -16,6 +16,7 @@
 
 package azkaban.jobtype;
 
+import azkaban.jobExecutor.KillingMeSoftlyJob;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -95,6 +96,7 @@ public class JobTypeManager {
     logger.info("Loading plugin default job types");
     plugins.addPluginClass("command", ProcessJob.class);
     plugins.addPluginClass("javaprocess", JavaProcessJob.class);
+    plugins.addPluginClass("killingmesoftly", KillingMeSoftlyJob.class);
     plugins.addPluginClass("noop", NoopJob.class);
     plugins.addPluginClass("python", PythonJob.class);
     plugins.addPluginClass("ruby", RubyJob.class);

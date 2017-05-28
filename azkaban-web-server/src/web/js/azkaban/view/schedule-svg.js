@@ -391,6 +391,9 @@ $(function() {
               if(obj.item.status == 50){
                 text[1] = "SUCCEEDED";
               }
+              else if(obj.item.status == 55){
+                text[1] = "KILLING";
+              }
               else if(obj.item.status == 60){
                 text[1] = "KILLED";
               }

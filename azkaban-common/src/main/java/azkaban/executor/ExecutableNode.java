@@ -48,7 +48,7 @@ public class ExecutableNode {
 
   private String id;
   private String type = null;
-  private Status status = Status.READY;
+  private volatile Status status = Status.READY;
   private long startTime = -1;
   private long endTime = -1;
   private long updateTime = -1;

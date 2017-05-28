@@ -498,7 +498,8 @@ public class FlowRunner extends EventHandler implements Runnable {
     boolean jobsRun = false;
     for (ExecutableNode node : nodesToCheck) {
       if (Status.isStatusFinished(node.getStatus())
-          || Status.isStatusRunning(node.getStatus())) {
+          || Status.isStatusRunning(node.getStatus())
+          || Status.KILLING == node.getStatus()) {
         // Really shouldn't get in here.
         continue;
       }
@@ -603,6 +604,7 @@ public class FlowRunner extends EventHandler implements Runnable {
       ExecutableNode node = flow.getExecutableNode(end);
 
       if (node.getStatus() == Status.KILLED
+          || node.getStatus() == Status.KILLING
           || node.getStatus() == Status.FAILED
           || node.getStatus() == Status.CANCELLED) {
         succeeded = false;
@@ -629,6 +631,10 @@ public class FlowRunner extends EventHandler implements Runnable {
       logger.info("Setting flow '" + id + "' status to FAILED in "
           + durationSec + " seconds");
       flow.setStatus(Status.FAILED);
+      break;
+    case KILLING:
+      logger.info("Setting flow '" + id + "' status to KILLED in " + durationSec + " seconds");
+      flow.setStatus(Status.KILLED);
       break;
     case FAILED:
     case KILLED:
@@ -925,7 +931,7 @@ public class FlowRunner extends EventHandler implements Runnable {
     synchronized (mainSyncObj) {
       if(flowKilled) return;
       logger.info("Kill has been called on flow " + execId);
-      flow.setStatus(Status.KILLED);
+      flow.setStatus(Status.KILLING);
       // If the flow is paused, then we'll also unpause
       flowPaused = false;
       flowKilled = true;
@@ -975,6 +981,8 @@ public class FlowRunner extends EventHandler implements Runnable {
         nodesToRetry.add(node);
         continue;
       } else if (node.getStatus() == Status.RUNNING) {
+        continue;
+      } else if (node.getStatus() == Status.KILLING) {
         continue;
       } else if (node.getStatus() == Status.SKIPPED) {
         node.setStatus(Status.DISABLED);

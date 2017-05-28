@@ -20,6 +20,8 @@ import static azkaban.flow.CommonJobProperties.JOB_ATTEMPT;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import azkaban.flow.CommonJobProperties;
@@ -32,6 +34,8 @@ public class InteractiveTestJob extends AbstractProcessJob {
   private Props generatedProperties = new Props();
   private boolean isWaiting = true;
   private boolean succeed = true;
+  private boolean delayFinish = false;
+  private final CountDownLatch finishLatch = new CountDownLatch(1);
 
   public static InteractiveTestJob getTestJob(String name) {
     return testJobs.get(name);
@@ -68,6 +72,10 @@ public class InteractiveTestJob extends AbstractProcessJob {
         failJob();
       }
     }
+    if (delayFinish) {
+      System.out.println("Waiting before exiting 1");
+      finishLatch.await(2, TimeUnit.SECONDS);
+    }
     if (!succeed) {
       throw new RuntimeException("Forced failure of " + getId());
     }
@@ -86,6 +94,9 @@ public class InteractiveTestJob extends AbstractProcessJob {
         }
 
         if (!isWaiting) {
+          if (delayFinish) {
+            finishLatch.await(2, TimeUnit.SECONDS);
+          }
           if (!succeed) {
             throw new RuntimeException("Forced failure of " + getId());
           } else {
@@ -119,6 +130,16 @@ public class InteractiveTestJob extends AbstractProcessJob {
       isWaiting = false;
       this.notify();
     }
+  }
+
+  public void delayFinish() {
+    synchronized (this) {
+      this.delayFinish = true;
+    }
+  }
+
+  public void finishDelayed() {
+    finishLatch.countDown();
   }
 
   @Override

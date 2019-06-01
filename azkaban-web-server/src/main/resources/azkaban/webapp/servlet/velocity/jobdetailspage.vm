@@ -21,6 +21,8 @@
   #parse("azkaban/webapp/servlet/velocity/style.vm")
   #parse("azkaban/webapp/servlet/velocity/javascript.vm")
 
+  <script type="text/javascript" src="${context}/js/jquery.twbsPagination.min.js"></script>
+
   <script type="text/javascript" src="${context}/js/azkaban/util/ajax.js"></script>
   <script type="text/javascript" src="${context}/js/azkaban/model/job-log.js"></script>
   <script type="text/javascript" src="${context}/js/azkaban/view/job-details.js"></script>
@@ -36,6 +38,18 @@
     var execId = "${execid}";
     var jobId = "${jobid}";
     var attempt = ${attempt};
+    var pageSize = "${size}";
+
+    var attemptPageSettings = {
+      projectName: "${projectName}",
+      flowId: "${flowid}",
+      pageSize: ${size},
+      pastAttempts: ${pastAttempts},
+    };
+
+    $(function () {
+      initAttemptPage(attemptPageSettings);
+    });
   </script>
   <script type="text/javascript">
     $(document).ready(function () {

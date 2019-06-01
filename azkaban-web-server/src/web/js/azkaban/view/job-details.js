@@ -16,6 +16,41 @@
 
 $.namespace('azkaban');
 
+var initPagination = function (elem, model) {
+  var totalPages = model.get("total");
+  if (!totalPages) {
+    return;
+  }
+
+  $(elem).twbsPagination({
+    totalPages: Math.ceil(totalPages / model.get("pageSize")),
+    startPage: model.get("page"),
+    initiateStartPageClick: false,
+    visiblePages: model.get("visiblePages"),
+    onPageClick: function (event, page) {
+      model.set({"page": page});
+    }
+  });
+};
+
+var initAttemptPage = function (settings) {
+
+  var jobLogModel = new azkaban.JobLogModel({
+    page: 1,
+    pageSize: settings.pageSize,
+    visiblePages: 5,
+    projectName: settings.projectName,
+    flowId: settings.flowId,
+    pastAttempts: settings.pastAttempts,
+  });
+  jobLogView = new azkaban.JobLogView({
+    el: $('#jobLogView'),
+    model: jobLogModel
+  });
+  jobLogModel.refresh();
+
+}
+
 var jobLogView;
 azkaban.JobLogView = Backbone.View.extend({
   events: {
@@ -25,11 +60,18 @@ azkaban.JobLogView = Backbone.View.extend({
   initialize: function () {
     this.handleInitView();
     this.listenTo(this.model, "change:logData", this.render);
+    this.model.bind('change:page', this.handlePageChange, this);
   },
 
   refresh: function () {
     this.model.refresh();
-    this.handleInitView();
+  },
+
+  render: function () {
+    var re = /(https?:\/\/(([-\w\.]+)+(:\d+)?(\/([\w/_\.]*(\?\S+)?)?)?))/g;
+    var log = this.model.get("logData");
+    log = log.replace(re, "<a href=\"$1\" title=\"\">$1</a>");
+    $("#logSection").html(log);
   },
 
   handleInitView: function () {
@@ -39,19 +81,25 @@ azkaban.JobLogView = Backbone.View.extend({
     });
   },
 
-  render: function () {
-    var re = /(https?:\/\/(([-\w\.]+)+(:\d+)?(\/([\w/_\.]*(\?\S+)?)?)?))/g;
-    var log = this.model.get("logData");
-    log = log.replace(re, "<a href=\"$1\" title=\"\">$1</a>");
-    $("#logSection").html(log);
+  handlePageChange: function () {
+    this.loadAndRenderData();
+  },
+
+  loadAndRenderData: function (onDataLoadedCb) {
+    var model = this.model;
+    var currentPage = model.get("page");
+    var pageSize = model.get("pageSize");
+    var pastAttempts = model.get("pastAttempts");;
+
+    model.set({
+      "total": pastAttempts
+    });
+    model.trigger("render");
+    if (onDataLoadedCb) {
+      onDataLoadedCb();
+    }
   }
 
-  // TODO also all this etc. from flow.js..
-  //   handlePageChange: function () {
-  //     this.loadAndRenderData();
-  //   },
-  //
-  //   loadAndRenderData: function (onDataLoadedCb) {
 });
 
 var showDialog = function (title, message) {
@@ -69,12 +117,3 @@ var showDialog = function (title, message) {
     }
   });
 }
-
-$(function () {
-  var jobLogModel = new azkaban.JobLogModel();
-  jobLogView = new azkaban.JobLogView({
-    el: $('#jobLogView'),
-    model: jobLogModel
-  });
-  jobLogModel.refresh();
-});

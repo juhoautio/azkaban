@@ -340,7 +340,7 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
     page.add("jobname", node.getId());
     page.add("jobLinkUrl", jobLinkUrl);
     page.add("jobType", node.getType());
-    page.add("node", node);
+    page.add("pastAttempts", node.getAttemptObjects().size());
 
     int pageNum = Math.max(1, getIntParam(req, "page", 1));
     page.add("page", pageNum);

@@ -77,6 +77,10 @@
         </div>
       </div>
     </div>
+
+
+    <ul id="attemptsPagination" class="pagination"></ul>
+
   </div>
 
   ## Error message message dialog.

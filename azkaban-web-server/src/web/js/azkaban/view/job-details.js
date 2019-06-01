@@ -23,11 +23,20 @@ azkaban.JobLogView = Backbone.View.extend({
   },
 
   initialize: function () {
+    this.handleInitView();
     this.listenTo(this.model, "change:logData", this.render);
   },
 
   refresh: function () {
     this.model.refresh();
+    this.handleInitView();
+  },
+
+  handleInitView: function () {
+    var model = this.model;
+    this.loadAndRenderData(function () {
+      initPagination('#attemptsPagination', model);
+    });
   },
 
   render: function () {
@@ -36,6 +45,13 @@ azkaban.JobLogView = Backbone.View.extend({
     log = log.replace(re, "<a href=\"$1\" title=\"\">$1</a>");
     $("#logSection").html(log);
   }
+
+  // TODO also all this etc. from flow.js..
+  //   handlePageChange: function () {
+  //     this.loadAndRenderData();
+  //   },
+  //
+  //   loadAndRenderData: function (onDataLoadedCb) {
 });
 
 var showDialog = function (title, message) {

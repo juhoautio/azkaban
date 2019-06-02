@@ -36,9 +36,9 @@ var initPagination = function (elem, model) {
 var initAttemptPage = function (settings) {
 
   var jobLogModel = new azkaban.JobLogModel({
-    page: settings.attempt,
-    totalPages: settings.pastAttempts,
-    visiblePages: 5,
+    page: settings.attempt + 1,
+    totalPages: settings.pastAttempts + 1,
+    visiblePages: 10,
     projectName: settings.projectName,
     flowId: settings.flowId
   });
@@ -81,7 +81,10 @@ azkaban.JobLogView = Backbone.View.extend({
   },
 
   handlePageChange: function () {
-    this.loadAndRenderData();
+    var requestURL = contextURL + "/executor?project=" + projectName
+        + "&execid=" + execId + "&job=" + jobId
+        + "&attempt=" + (this.model.get("page") - 1);
+    window.location.href = requestURL;
   },
 
   loadAndRenderData: function (onDataLoadedCb) {

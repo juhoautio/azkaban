@@ -17,13 +17,13 @@
 $.namespace('azkaban');
 
 var initPagination = function (elem, model) {
-  var totalPages = model.get("total");
+  var totalPages = model.get("totalPages");
   if (!totalPages) {
     return;
   }
 
   $(elem).twbsPagination({
-    totalPages: Math.ceil(totalPages / model.get("pageSize")),
+    totalPages: model.get("totalPages"),
     startPage: model.get("page"),
     initiateStartPageClick: false,
     visiblePages: model.get("visiblePages"),
@@ -36,12 +36,11 @@ var initPagination = function (elem, model) {
 var initAttemptPage = function (settings) {
 
   var jobLogModel = new azkaban.JobLogModel({
-    page: 1,
-    pageSize: settings.pageSize,
+    page: settings.attempt,
+    totalPages: settings.pastAttempts,
     visiblePages: 5,
     projectName: settings.projectName,
-    flowId: settings.flowId,
-    pastAttempts: settings.pastAttempts,
+    flowId: settings.flowId
   });
   jobLogView = new azkaban.JobLogView({
     el: $('#jobLogView'),

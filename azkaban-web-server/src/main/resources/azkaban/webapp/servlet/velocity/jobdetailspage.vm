@@ -43,7 +43,7 @@
     var attemptPageSettings = {
       projectName: "${projectName}",
       flowId: "${flowid}",
-      pageSize: ${size},
+      attempt: ${attempt},
       pastAttempts: ${pastAttempts},
     };
 

@@ -340,26 +340,23 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
     page.add("jobname", node.getId());
     page.add("jobLinkUrl", jobLinkUrl);
     page.add("jobType", node.getType());
-    page.add("pastAttempts", node.getAttemptObjects().size());
+    final int pastAttempts = node.getAttemptObjects().size();
+    page.add("pastAttempts", pastAttempts);
 
-    int pageNum = Math.max(1, getIntParam(req, "page", 1));
+    int pageNum = Math.max(1, getIntParam(req, "attempt", 1));
+    // TODO I guess ${page} is not used after all?
     page.add("page", pageNum);
 
     final int pageSize = Math.max(1, getIntParam(req, "size", 25));
     page.add("pageSize", pageSize);
+    // TODO use pastAttempts directly if recordCount is needed at all?
+//    page.add("recordCount", pastAttempts);
 
-    // TODO
-//    final int numResults = this.executorManagerAdapter.getNumberOfJobExecutions(project, jobId);
-//    page.add("recordCount", numResults);
-//
-//    final int totalPages = ((numResults - 1) / pageSize) + 1;
-//    if (pageNum > totalPages) {
-//      pageNum = totalPages;
-//      page.add("page", pageNum);
-//    }
-//    final int elementsToSkip = (pageNum - 1) * pageSize;
-//    final List<ExecutableJobInfo> jobInfo =
-//        this.executorManagerAdapter.getExecutableJobs(project, jobId, elementsToSkip, pageSize);
+    final int totalPages = ((pastAttempts - 1) / pageSize) + 1;
+    if (pageNum > totalPages) {
+      pageNum = totalPages;
+      page.add("page", pageNum);
+    }
 
     if (node.getStatus() == Status.FAILED || node.getStatus() == Status.KILLED) {
       page.add("jobFailed", true);

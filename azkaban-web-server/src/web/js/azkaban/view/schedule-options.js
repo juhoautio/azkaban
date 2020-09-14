@@ -349,15 +349,24 @@ azkaban.AdvancedScheduleView = Backbone.View.extend({
     var period = $('#advperiod').val() + $('#advperiod_units').val();
 
     var flowOverride = {};
+    var jobOverride = {};
     var editRows = $(".editRow");
     for (var i = 0; i < editRows.length; ++i) {
       var row = editRows[i];
+      var jobOrFlow = row.cells[0].firstChild.value;
       var td = $(row).find('td');
       var key = $(td[0]).text();
       var val = $(td[1]).text();
 
       if (key && key.length > 0) {
-        flowOverride[key] = val;
+        if (jobOrFlow && jobOrFlow.length > 0) {
+          if (!jobOverride.hasOwnProperty(jobOrFlow)) {
+            jobOverride[jobOrFlow] = {};
+          }
+          jobOverride[jobOrFlow][key] = val;
+        } else {
+          flowOverride[key] = val;
+        }
       }
     }
 
@@ -377,7 +386,8 @@ azkaban.AdvancedScheduleView = Backbone.View.extend({
       notifyFailureFirst: notifyFailureFirst,
       notifyFailureLast: notifyFailureLast,
       executingJobOption: executingJobOption,
-      flowOverride: flowOverride
+      flowOverride: flowOverride,
+      jobOverride: jobOverride
     };
 
     $.post(

@@ -147,13 +147,16 @@
             <table>
               <thead>
               <tr>
+                <!-- TODO it seems like scheduleoptionspanel.vm is never used. is this some
+                leftover from the past? -->
+                <th>Flow/Job</th>
                 <th>Name</th>
                 <th>Value</th>
               </tr>
               </thead>
               <tbody>
               <tr id="scheduleAddRow">
-                <td id="addRow-col" colspan="2"><span class="addIcon"></span><a href="#">Add Row</a>
+                <td id="addRow-col" colspan="3"><span class="addIcon"></span><a href="#">Add Row</a>
                 </td>
               </tr>
               </tbody>
